@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Speed Sort Engine v7.9.18 - Stable Base</title>
+    <style>
+        :root { --main: #6c5ce7; --bg: #f0f3f7; }
+        body { font-family: 'Segoe UI', system-ui; margin: 0; display: flex; height: 100vh; background: var(--bg); overflow: hidden; }
+        #panel { width: 440px; background: white; padding: 20px; border-right: 1px solid #d1d8e0; overflow-y: auto; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
+        .section { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        h3 { margin: 0 0 10px 0; font-size: 12px; color: var(--main); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        label { display: block; font-size: 10px; font-weight: 700; color: #4b6584; margin-bottom: 3px; margin-top: 8px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1.5px solid #d1d8e0; border-radius: 6px; box-sizing: border-box; font-size: 12px; }
+        
+        /* Исправленные слайдеры: без отступов, доходят до конца */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 0; padding: 0; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #dfe6e9; border-radius: 4px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--main); margin-top: -5px; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+        .range-container { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+        .val-badge { min-width: 35px; font-size: 11px; font-weight: bold; color: var(--main); background: #f0edff; text-align: center; border-radius: 4px; padding: 2px; border: 1px solid #6c5ce7; }
+
+        .flex { display: flex; gap: 10px; align-items: flex-end; }
+        .btn-group { position: sticky; bottom: -20px; background: white; padding: 10px 0; border-top: 1px solid #eee; z-index: 10; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 8px; }
+        #gen-btn { background: #20bf6b; color: white; }
+        #copy-btn { background: #4b6584; color: white; }
+        
+        #view { flex-grow: 1; padding: 20px; display: flex; flex-direction: column; background: #2d3436; }
+        #game-preview { width: 100%; height: 100%; border-radius: 12px; border: none; background: #000; }
+        #output-code { height: 40px; margin-top: 10px; background: #1e1e1e; color: #20bf6b; font-family: monospace; font-size: 10px; padding: 10px; border-radius: 6px; border: none; resize: none; }
+    </style>
+</head>
+<body>
+
+<div id="panel">
+    <h2>🚀 Editor</h2>
+    
+    <div class="section">
+        <h3>🎨 Appearance</h3>
+        <label> Font Name:</label>
+        <input type="text" id="gFont" value="Special Elite">
+        
+        <div class="flex">
+            <div style="flex: 1"><label>Font (px):</label><input type="number" id="fSize" value="18"></div>
+            <div style="flex: 1"><label>Text Colour:</label><input type="color" id="fColor" value="#000000"></div>
+        </div>
+        
+        <label> Text Opacity:</label>
+        <div class="range-container">
+            <input type="range" id="fOpacity" min="0" max="1" step="0.01" value="1" oninput="this.nextElementSibling.innerText=this.value">
+            <span class="val-badge">1</span>
+        </div>
+
+        <label>Game Background (URL):</label>
+        <input type="text" id="bg" value="https://img.freepik.com/free-vector/underwater-background-with-ocean-bottom-sun-rays_107791-5843.jpg">
+        
+        <label> Card Background (URL):</label>
+        <input type="text" id="itemMask" placeholder="URL на PNG">
+
+        <div class="flex">
+            <div style="flex: 1"><label>Plate Colour:</label><input type="color" id="cardBg" value="#ffffff"></div>
+            <div style="flex: 1"><label>Shadow :</label><input type="color" id="cardShadow" value="#6c5ce7"></div>
+        </div>
+        
+        <label>Plate Opacity (0 = Скрыть):</label>
+        <div class="range-container">
+            <input type="range" id="cardAlpha" min="0" max="1" step="0.01" value="0.7" oninput="this.nextElementSibling.innerText=this.value">
+            <span class="val-badge">0.7</span>
+        </div>
+
+        <div class="flex">
+            <div style="flex: 1.5">
+                <label> Belt Speed (1-100 sec):</label>
+                <div class="range-container">
+                    <input type="range" id="speed" min="1" max="100" step="1" value="20" oninput="this.nextElementSibling.innerText=this.value">
+                    <span class="val-badge">20</span>
+                </div>
+            </div>
+            <div style="flex: 1">
+                <label>Belt Direction:</label>
+                <select id="moveDir">
+                    <option value="right" selected>Right</option>
+                    <option value="left">Left</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📊 UI Assets</h3>
+        <div class="flex">
+            <div style="flex: 1"><label>Score Icon:</label><input type="text" id="sIco" value="https://cdn-icons-png.flaticon.com/512/11726/11726053.png"></div>
+            <div style="flex: 1"><label>Life Icon:</label><input type="text" id="lIco" value="https://cdn-icons-png.flaticon.com/512/833/833472.png"></div>
+        </div>
+        <div class="flex">
+            <div style="flex: 1"><label>UI Scale:</label><input type="number" id="uiScale" value="40"></div>
+            <div style="flex: 1"><label>Lives:</label><input type="number" id="livesCount" value="3"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📦 Categories</h3>
+        <select id="boxCount" onchange="toggleBoxes()">
+            <option value="2" selected>2 Boxes</option>
+            <option value="3">3 Boxes</option>
+            <option value="4">4 Boxes</option>
+        </select>
+        <div id="boxes-configs"></div>
+    </div>
+
+    <div class="section">
+        <h3>📝 Tasks</h3>
+        <textarea id="items" rows="5">Shark | 1 | https://cdn-icons-png.flaticon.com/512/2194/2194811.png
+Submarine | 2 | https://cdn-icons-png.flaticon.com/512/3063/3063822.png
+Anchor | 1 | https://cdn-icons-png.flaticon.com/512/2043/2043132.png
+Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
+    </div>
+
+    <div class="btn-group">
+        <button id="gen-btn" class="btn" onclick="build()">🔄 Refresh Preview</button>
+        <button id="copy-btn" class="btn" onclick="copy()">📋 Copy the Code</button>
+    </div>
+    <textarea id="output-code" readonly></textarea>
+</div>
+
+<div id="view">
+    <iframe id="game-preview"></iframe>
+</div>
+
+<script>
+    function toggleBoxes() {
+        const count = document.getElementById('boxCount').value;
+        const container = document.getElementById('boxes-configs');
+        container.innerHTML = '';
+        for(let i=1; i<=count; i++) {
+            container.innerHTML += `<div style="border-top:1px dashed #ccc; margin-top:5px; padding-top:5px"><div class="flex"><input type="text" id="b${i}T" value="Category ${i}"><input type="text" id="b${i}I" value="https://cdn-icons-png.flaticon.com/512/3058/3058995.png"></div></div>`;
+        }
+    }
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function build() {
+        const v = (id) => document.getElementById(id)?.value || '';
+        const bCount = parseInt(v('boxCount'));
+        const dir = v('moveDir');
+        const speed = v('speed');
+        const maxLives = parseInt(v('livesCount')) || 3;
+        const mask = v('itemMask');
+        
+        const alpha = parseFloat(v('cardAlpha'));
+        const plateBg = alpha <= 0 ? 'transparent' : hexToRgba(v('cardBg'), alpha);
+        const sColor = v('cardShadow');
+        const textOpacity = parseFloat(v('fOpacity'));
+
+        const itArr = v('items').split('\n').filter(l => l.includes('|')).map(l => {
+            const p = l.split('|');
+            return { t: p[0]?.trim(), c: p[1]?.trim(), i: p[2]?.trim() || '' };
+        });
+
+        const animStart = dir === 'right' ? 'translateX(-50%)' : 'translateX(0)';
+        const animEnd = dir === 'right' ? 'translateX(0)' : 'translateX(-50%)';
+
+        let boxesHTML = '';
+        for(let i=1; i<=bCount; i++) {
+            boxesHTML += `<div class="bin" data-t="${i}"><img src="${v('b'+i+'I')}"><b>${v('b'+i+'T')}</b></div>`;
+        }
+
+        const doubleItems = [...itArr, ...itArr];
+
+        const gameCode = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=${v('gFont').replace(/ /g, '+')}&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"><\/script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: '${v('gFont')}', sans-serif; background: url('${v('bg')}') center/cover no-repeat; height: 100vh; user-select: none; }
+        #ui { position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 100; }
+        .score-board { display: flex; align-items: center; gap: 10px; padding: 8px 20px; border-radius: 50px; background: rgba(0,0,0,0.6); color: white; font-size: ${v('uiScale') * 0.6}px; font-weight: bold; }
+        .score-board img { width: ${v('uiScale')}px; }
+        .heart { width: ${v('uiScale')}px; margin-left: 5px; transition: 0.4s; }
+        .heart.lost { opacity: 0.1; filter: grayscale(1); transform: scale(0.8); }
+        #belt-container { position: absolute; top: 25%; width: 100%; height: 220px; overflow: hidden; }
+        #belt { position: absolute; display: flex; width: fit-content; animation: move ${speed}s linear infinite; will-change: transform; }
+        @keyframes move { from { transform: ${animStart}; } to { transform: ${animEnd}; } }
+        .item-slot { width: 220px; height: 180px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .item { 
+            width: 180px; height: 140px; display: flex; align-items: center; justify-content: center; position: relative;
+            ${mask ? `background: url('${mask}') center/contain no-repeat;` : ''}
+            cursor: grab; touch-action: none;
+        }
+        .plate {
+            background-color: ${plateBg};
+            ${alpha <= 0 ? 'box-shadow: none;' : 'box-shadow: 0 5px 20px ' + sColor + 'cc;'}
+            padding: 10px; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-width: 90px; z-index: 2; pointer-events: none;
+        }
+        .item img { 
+            width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; 
+            opacity: ${textOpacity}; display: ${textOpacity <= 0 ? 'none' : 'block'};
+        }
+        .item span { 
+            font-size: ${v('fSize')}px; color: ${v('fColor')}; 
+            opacity: ${textOpacity}; display: ${textOpacity <= 0 ? 'none' : 'block'};
+            font-weight: bold; text-align: center; 
+        }
+        .item.dragging { position: fixed !important; z-index: 2000; transform: scale(1.1) !important; pointer-events: none; }
+        .bins { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-around; }
+        .bin { text-align: center; flex: 1; max-width: 200px; transition: 0.3s; color: white; }
+        .bin img { width: 100%; max-height: 120px; object-fit: contain; }
+        .bin b { display: block; text-shadow: 2px 2px 4px #000; font-size: ${v('fSize')}px; margin-top: 5px; }
+        .bin.drop-active { transform: scale(1.1); filter: brightness(1.2); }
+        .shake { animation: shake 0.4s both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        
+        /* Экран финала */
+        #end { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); display:none; flex-direction:column; align-items:center; justify-content:center; color:white; z-index:5000; text-align:center; }
+        #end img { width: 120px; margin-bottom: 10px; }
+        #end h1 { margin: 0; font-size: 32px; }
+        #end p { font-size: 20px; color: #20bf6b; margin: 10px 0; font-weight: bold; }
+        #end button { padding: 15px 40px; border-radius: 12px; cursor: pointer; background: #20bf6b; color: white; border: none; font-weight: bold; font-size: 16px; transition: 0.2s; }
+        #end button:hover { background: #26de81; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div class="score-board"><img src="${v('sIco')}"><span><span id="s">0</span></span></div>
+        <div id="lives-container">${Array(maxLives).fill('<img class="heart" src="'+v('lIco')+'">').join('')}</div>
+    </div>
+    <div id="belt-container"><div id="belt">
+        ${doubleItems.map(i => `
+            <div class="item-slot">
+                <div class="item" data-c="${i.c}">
+                    <div class="plate">
+                        ${i.i ? '<img src="'+i.i+'">' : ''}
+                        <span>${i.t}</span>
+                    </div>
+                </div>
+            </div>`).join('')}
+    </div></div>
+    <div class="bins">${boxesHTML}</div>
+    
+    <div id="end">
+        <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png">
+        <h1 id="m"></h1>
+        <p id="fs"></p>
+        <button onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        let score = 0, lives = ${maxLives}, isGameOver = false;
+        
+        function updateLives() {
+            const h = document.querySelectorAll('.heart');
+            let idx = ${maxLives} - lives - 1;
+            if(h[idx]) h[idx].classList.add('lost');
+            if(lives <= 0) showEnd("GAME OVER");
+        }
+
+        function checkFinish() {
+            // Если на ленте (и в теле) больше нет предметов
+            const remaining = document.querySelectorAll('.item').length;
+            if (remaining === 0) showEnd("WELL DONE!");
+        }
+
+        function showEnd(msg) {
+            if(isGameOver) return; 
+            isGameOver = true;
+            const endScreen = document.getElementById('end');
+            endScreen.style.display = 'flex';
+            document.getElementById('m').innerText = msg;
+            document.getElementById('fs').innerText = 'Final Score: ' + score;
+            document.getElementById('belt').style.animationPlayState = 'paused';
+        }
+
+        interact('.item').draggable({
+            listeners: {
+                start(e) {
+                    if(isGameOver) return;
+                    const el = e.target; 
+                    const r = el.getBoundingClientRect();
+                    Object.assign(el.style, { width: r.width+'px', height: r.height+'px', left: r.left+'px', top: r.top+'px' });
+                    el.classList.add('dragging'); 
+                    document.body.appendChild(el);
+                },
+                move(e) {
+                    const el = e.target;
+                    el.style.left = (parseFloat(el.style.left) || 0) + e.dx + 'px';
+                    el.style.top = (parseFloat(el.style.top) || 0) + e.dy + 'px';
+                },
+                end(e) {
+                    const el = e.target; 
+                    el.classList.remove('dragging');
+                    // Если бросили не в корзину (возвращаем или удаляем)
+                    if(el.parentNode === document.body) {
+                        el.style.opacity = '0';
+                        setTimeout(() => { if(el.parentNode === document.body) el.remove(); checkFinish(); }, 200);
+                    }
+                }
+            }
+        });
+
+        interact('.bin').dropzone({
+            overlap: 0.15,
+            ondragenter(e) { e.target.classList.add('drop-active'); },
+            ondragleave(e) { e.target.classList.remove('drop-active'); },
+            ondrop(e) {
+                if(isGameOver) return;
+                const item = e.relatedTarget, bin = e.target;
+                bin.classList.remove('drop-active');
+                if(item.dataset.c === bin.dataset.t) {
+                    score += 10; 
+                    document.getElementById('s').innerText = score;
+                } else {
+                    lives--; 
+                    updateLives(); 
+                    bin.classList.add('shake');
+                    setTimeout(() => bin.classList.remove('shake'), 400);
+                }
+                item.remove();
+                checkFinish();
+            }
+        });
+    <\/script>
+</body>
+</html>`;
+
+        const blob = new Blob([gameCode], {type: 'text/html'});
+        document.getElementById('game-preview').src = URL.createObjectURL(blob);
+        document.getElementById('output-code').value = `<iframe srcdoc="${gameCode.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" width="100%" height="540" frameborder="0" scrolling="no"></iframe>`;
+    }
+
+    function copy() {
+        const area = document.getElementById('output-code');
+        area.select(); document.execCommand('copy');
+        alert('Code is copied!');
+    }
+    window.onload = () => { toggleBoxes(); build(); };
+</script>
+</body>
+</html>
